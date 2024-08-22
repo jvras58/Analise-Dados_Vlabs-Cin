@@ -1,19 +1,16 @@
 {
-    "name": "CESAR.School - Introdução à Ciência de Dados",
-    "dockerComposeFile": "docker-compose.yml",
-    "service": "ds-project",
+    "name": "devenv",
+    "dockerComposeFile": "compose.yml",
+    "service": "dev-env",
     "workspaceFolder": "/workspace",
+    "remoteUser": "ubuntu",
     "customizations": {
-        "vscode": {
-            "extensions": [
-                "ms-python.python",
-                "oderwat.indent-rainbow",
-                "charliermarsh.ruff",
-                "tamasfe.even-better-toml",
-                "ms-toolsai.jupyter",
-                "janisdd.vscode-edit-csv"
-            ]
-        }
-    },
-    "postCreateCommand": "make"
-}
+      "vscode": {
+        "extensions": [
+          "oderwat.indent-rainbow",
+          "charliermarsh.ruff",
+          "tamasfe.even-better-toml"
+        ]
+      }
+    }
+  }
