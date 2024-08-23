@@ -69,7 +69,7 @@ E para instacia-lo no VSCODE é recomendado as seguintes configurações:
 
 #### Docker Engine
 
-É obrigatório ter o Docker Engine já instalado e cunfigurado. Para mais informações de como instalar o Docker Engine em seu SO, ver em:
+É obrigatório ter o Docker Engine já instalado e configurado. Para mais informações de como instalar o Docker Engine em seu SO, ver em:
 
 - Instruções para instalação do Docker Engine: [Ver o link](https://docs.docker.com/engine/install/)
 
@@ -84,7 +84,13 @@ Depois da compilação do container o VSCode abrirá o repositório em um ambien
 
 #### Procedimento para iniciar:
 
-#### Limpeza é organização de movimentos apartir do dataset (movimentos_unidade_1_pre_processado.csv)
+#### Iniciar o ambiente de desenvolvimento:
+
+```
+$> make venv
+```
+
+#### Limpeza é organização de movimentos apartir do dataset (movimentos_unidade_1.csv)
 
 ```
 $> make run
