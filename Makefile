@@ -17,3 +17,10 @@ update:
 	@git fetch origin
 	@git pull
 	@$(MAKE) venv
+
+run:
+	@poetry run python src/data/make_dataset.py 
+	@poetry run python src/features/build_features.py
+
+start:
+	@poetry run streamlit run src/visualization/visualize.py
