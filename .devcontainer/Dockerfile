@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     liblzma-dev \
     pipx \
+    graphviz \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && curl -sS https://starship.rs/install.sh | sh -s -- --yes \
     && git clone https://github.com/pyenv/pyenv.git /home/ubuntu/.pyenv \

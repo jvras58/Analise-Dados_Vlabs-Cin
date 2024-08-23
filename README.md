@@ -101,6 +101,10 @@ $> make run
 $> make start
 ```
 
+#### CheckList:
+
+- [pdf](docs/CHECKLIST.md)
+
 #### Desafio:
 
 - [pdf](docs/Desafio_Técnico.pdf)
