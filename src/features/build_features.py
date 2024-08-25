@@ -1,44 +1,48 @@
 import json
 
 import pandas as pd
+from src.data.make_dataset import get_cnj_grouping
 
-from src.data.make_dataset import get_cnj_grouping  
 # FIXME: ERRO DE IMPORT RESOLVIDO: export PYTHONPATH=$PYTHONPATH:/workspace/src
 
 # TODO: Iniciando padronização de movimentos
 def especializar_movimentos(df, cnj_grouping):
-    """
-    Especializa os movimentos processuais utilizando as colunas 'movimentoID', 'documento' e 'complemento'.
+    """Especializa os movimentos processuais utilizando as colunas 'movimentoID', 'documento' e 'complemento'.
     - Adiciona novas colunas para classificar ou agrupar os movimentos.
 
     Args:
+    ----
         df (pd.DataFrame): DataFrame pré-processado com os movimentos.
         cnj_grouping (dict): Dicionário de agrupamento CNJ.
 
     Returns:
+    -------
         pd.DataFrame: DataFrame com novas features especializadas.
+
     """
     df['movement_type'] = df['documento'].map(lambda x: classificar_por_documento(x))
     df['movement_detail'] = df['complemento'].map(lambda x: classificar_por_complemento(x))
     df['complexity'] = df['activity_group'].map(determinar_complexidade)
 
     df['activity_group'] = df['movimentoID'].map(cnj_grouping).fillna('Outro Movimento')
-    
+
     df['special_cnj_classification'] = df.apply(specialize_activity, axis=1)
-    
+
     return df
 
 
 # TODO: Iniciando padronização de movimentos
 def specialize_activity(row):
-    """
-    Especializa uma atividade específica com base em seu identificador `movimentoID`.
+    """Especializa uma atividade específica com base em seu identificador `movimentoID`.
 
     Args:
+    ----
         row (pd.Series): Linha do DataFrame contendo as informações do movimento.
 
     Returns:
+    -------
         str: Classificação especializada do movimento.
+
     """
     # Identificadores específicos para especialização
     identificadores_especializados = {
@@ -48,14 +52,14 @@ def specialize_activity(row):
         11010: "Mero Expediente",
         106: "Mandado Judicial",
         985: "Mandado de Citação",
-        970: "Audiência"
+        970: "Audiência",
     }
     # print(f"Verificando movimentoID: {row['movimentoID']}")
 
     if row['movimentoID'] in identificadores_especializados:
         # print(f"movimentoID {row['movimentoID']} encontrado, classificando como {identificadores_especializados[row['movimentoID']]}")
         return identificadores_especializados[row['movimentoID']]
-    
+
     # print(f"movimentoID {row['movimentoID']} não encontrado, classificando como Outros Movimentos")
     return "Outros Movimentos"
 
@@ -159,7 +163,7 @@ def determinar_complexidade(activity_group):
         'Notificação': 'Simples',
         'Audiência': 'Médio',
         'Sentença': 'Médio',
-        'Decisão': 'Médio'
+        'Decisão': 'Médio',
     }
     return complexidade_map.get(activity_group, 'Complexo')
 

@@ -6,7 +6,8 @@ import pandas as pd
 
 
 def load_and_preprocess_data(file_path: pd) -> pd.DataFrame:
-    """Carrega o dataset e realiza o pré-processamento inicial:
+    """Carrega o dataset e realiza o pré-processamento inicial.
+
     - Converte as colunas de datas para o formato datetime.
     - Trata valores nulos em 'complemento' e 'documento'.
     - Remove movimentos insignificantes.
@@ -22,47 +23,47 @@ def load_and_preprocess_data(file_path: pd) -> pd.DataFrame:
         pd.DataFrame: DataFrame pré-processado.
 
     """
-    df = pd.read_csv(file_path)
+    dados = pd.read_csv(file_path)
 
-    df['dataInicio'] = pd.to_datetime(df['dataInicio'], errors='coerce')
-    df['dataFinal'] = pd.to_datetime(df['dataFinal'], errors='coerce')
+    dados['dataInicio'] = pd.to_datetime(dados['dataInicio'], errors='coerce')
+    dados['dataFinal'] = pd.to_datetime(dados['dataFinal'], errors='coerce')
 
-    df['complemento'] = df['complemento'].fillna('N/A')
-    df['documento'] = df['documento'].fillna('N/A')
+    dados['complemento'] = dados['complemento'].fillna('N/A')
+    dados['documento'] = dados['documento'].fillna('N/A')
 
-    df = remover_insignificantes_movements(df)
+    # dados = remover_insignificantes_movements(dados)
 
-    df['activity_group'] = (
-        df['activity'].map(get_cnj_grouping()).fillna(df['activity'])
+    dados['activity_group'] = (
+        dados['activity'].map(get_cnj_grouping()).fillna(dados['activity'])
     )
 
-    df['duration_calculated'] = calcular_duração(df)
+    dados['duration_calculated'] = calcular_duração(dados)
 
-    df = filtro_outliers(df)
+    # dados = filtro_outliers(dados)
 
-    df.drop_duplicates(subset=['processoID', 'activity'], inplace=True)
-
-    return df
+    return dados.drop_duplicates(subset=['processoID', 'activity'])
 
 
-def remover_insignificantes_movements(df):
-    """Remove movimentos insignificantes do DataFrame.
+# TODO: decifir oq fazer com os movimentos insignificantes (remover ou agrupar) é não é assim que se decide é sim usando o CNJ-tree
 
-    Args:
-    ----
-        df (pd.DataFrame): DataFrame original.
+# def remover_insignificantes_movements(df: pd.DataFrame) -> pd.DataFrame:
+#     """Remove movimentos insignificantes do DataFrame.
 
-    Returns:
-    -------
-        pd.DataFrame: DataFrame sem movimentos insignificantes.
+#     Args:
+#     ----
+#         df (pd.DataFrame): DataFrame original.
 
-    """
-    movimentos_insignificantes = [
-        'Publicação',
-        'Decurso de Prazo',
-        'Conclusão',
-    ]
-    return df[~df['activity'].isin(movimentos_insignificantes)]
+#     Returns:
+#     -------
+#         pd.DataFrame: DataFrame sem movimentos insignificantes.
+
+#     """
+#     movimentos_insignificantes = [
+#         'Publicação',
+#         'Decurso de Prazo',
+#         'Conclusão',
+#     ]
+#     return df[~df['activity'].isin(movimentos_insignificantes)]
 
 # TODO: Iniciando padronização de movimentos
 def get_cnj_grouping():
@@ -114,22 +115,22 @@ def calcular_duração(df):
     """
     return (df['dataFinal'] - df['dataInicio']).dt.total_seconds()
 
+# TODO: analisar se é necessário filtrar outliers ou seu impacto no desafio
+# def filtro_outliers(df):
+#     """Filtra outliers na duração dos movimentos.
 
-def filtro_outliers(df):
-    """Filtra outliers na duração dos movimentos.
+#     Args:
+#     ----
+#         df (pd.DataFrame): DataFrame original.
 
-    Args:
-    ----
-        df (pd.DataFrame): DataFrame original.
+#     Returns:
+#     -------
+#         pd.DataFrame: DataFrame sem outliers na duração.
 
-    Returns:
-    -------
-        pd.DataFrame: DataFrame sem outliers na duração.
-
-    """
-    return df[
-        (df['duration_calculated'] > 0) & (df['duration_calculated'] < 1e7)
-    ]
+#     """
+#     return df[
+#         (df['duration_calculated'] > 0) & (df['duration_calculated'] < 1e7)
+#     ]
 
 
 if __name__ == '__main__':
