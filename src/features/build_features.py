@@ -1,3 +1,5 @@
+"""Módulo para carregar os datasets processar definitivamente os movimentos processuais."""
+
 import json
 
 import pandas as pd
@@ -5,7 +7,6 @@ from src.data.make_dataset import get_cnj_grouping
 
 # FIXME: ERRO DE IMPORT RESOLVIDO: export PYTHONPATH=$PYTHONPATH:/workspace/src
 
-# TODO: Iniciando padronização de movimentos
 def especializar_movimentos(df, cnj_grouping):
     """Especializa os movimentos processuais utilizando as colunas 'movimentoID', 'documento' e 'complemento'.
     - Adiciona novas colunas para classificar ou agrupar os movimentos.
@@ -31,7 +32,6 @@ def especializar_movimentos(df, cnj_grouping):
     return df
 
 
-# TODO: Iniciando padronização de movimentos
 def specialize_activity(row):
     """Especializa uma atividade específica com base em seu identificador `movimentoID`.
 
@@ -44,7 +44,6 @@ def specialize_activity(row):
         str: Classificação especializada do movimento.
 
     """
-    # Identificadores específicos para especialização
     identificadores_especializados = {
         85: "Petição Inicial",
         12271: "Petição Contestação",
@@ -54,17 +53,10 @@ def specialize_activity(row):
         985: "Mandado de Citação",
         970: "Audiência",
     }
-    # print(f"Verificando movimentoID: {row['movimentoID']}")
-
     if row['movimentoID'] in identificadores_especializados:
-        # print(f"movimentoID {row['movimentoID']} encontrado, classificando como {identificadores_especializados[row['movimentoID']]}")
         return identificadores_especializados[row['movimentoID']]
-
-    # print(f"movimentoID {row['movimentoID']} não encontrado, classificando como Outros Movimentos")
     return "Outros Movimentos"
 
-
-# TODO: Iniciando padronização de movimentos
 def mapear_para_tpu(activity):
     """Mapeia uma atividade para a classificação correspondente na TPU.
 
@@ -169,15 +161,27 @@ def determinar_complexidade(activity_group):
 
 
 if __name__ == '__main__':
-    # Carregar o dataset pré-processado
-    # Salvar o DataFrame processado em um novo arquivo CSV
-    dataset_path = '/workspace/data/movimentos_unidade_1_pre_processado.csv'
-    df = pd.read_csv(dataset_path)
+    # Carregar o primeiro dataset pré-processado
+    dataset_path_1 = '/workspace/data/movimentos_unidade_1_pre_processado.csv'
+    df_1 = pd.read_csv(dataset_path_1)
+    
+    # Carregar o segundo dataset pré-processado
+    dataset_path_2 = '/workspace/data/movimentos_unidade_2_pre_processado.csv'
+    df_2 = pd.read_csv(dataset_path_2)
+    
     # Gerar o dicionário de agrupamento CNJ a partir da TPU
     cnj_grouping = get_cnj_grouping()
-    # Especializar os movimentos usando o DataFrame e o agrupamento CNJ
-    df_specialized = especializar_movimentos(df, cnj_grouping)
-    print(df_specialized.head())
-    df_specialized.to_csv(
+    
+    # Especializar os movimentos usando o DataFrame e o agrupamento CNJ para o primeiro dataset
+    df_specialized_1 = especializar_movimentos(df_1, cnj_grouping)
+    print(df_specialized_1.head())
+    df_specialized_1.to_csv(
         '/workspace/data/movimentos_unidade_1_processado.csv', index=False,
+    )
+    
+    # Especializar os movimentos usando o DataFrame e o agrupamento CNJ para o segundo dataset
+    df_specialized_2 = especializar_movimentos(df_2, cnj_grouping)
+    print(df_specialized_2.head())
+    df_specialized_2.to_csv(
+        '/workspace/data/movimentos_unidade_2_processado.csv', index=False,
     )

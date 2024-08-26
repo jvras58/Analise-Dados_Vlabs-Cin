@@ -31,7 +31,9 @@ def load_and_preprocess_data(file_path: pd) -> pd.DataFrame:
     dados['complemento'] = dados['complemento'].fillna('N/A')
     dados['documento'] = dados['documento'].fillna('N/A')
 
-    # dados = remover_insignificantes_movements(dados)
+    cnj_grouping = get_cnj_grouping()
+
+    dados = remover_insignificantes_movements(dados, cnj_grouping)
 
     dados['activity_group'] = (
         dados['activity'].map(get_cnj_grouping()).fillna(dados['activity'])
@@ -39,33 +41,57 @@ def load_and_preprocess_data(file_path: pd) -> pd.DataFrame:
 
     dados['duration_calculated'] = calcular_duração(dados)
 
-    # dados = filtro_outliers(dados)
-
     return dados.drop_duplicates(subset=['processoID', 'activity'])
 
 
-# TODO: decifir oq fazer com os movimentos insignificantes (remover ou agrupar) é não é assim que se decide é sim usando o CNJ-tree
+def remover_insignificantes_movements(df: pd.DataFrame, cnj_grouping: dict) -> pd.DataFrame:
+    """Remove movimentos insignificantes do DataFrame baseado na árvore CNJ.
 
-# def remover_insignificantes_movements(df: pd.DataFrame) -> pd.DataFrame:
-#     """Remove movimentos insignificantes do DataFrame.
+    Args:
+    ----
+        df (pd.DataFrame): DataFrame original.
+        cnj_grouping (dict): Dicionário de agrupamento CNJ que mapeia movimentoID para categorias.
+
+    Returns:
+    -------
+        pd.DataFrame: DataFrame sem movimentos insignificantes.
+    """
+    # Categorias de movimentos considerados insignificantes na árvore CNJ e de acordo com a documentação do desafio técnico
+    categorias_insignificantes = ['publicação', 'decurso de prazo', 'conclusão', 'mero expediente']
+
+    df['grupo_movimento'] = df['movimentoID'].map(cnj_grouping).fillna('Outros')
+
+    df = df[~df['grupo_movimento'].str.lower().isin(categorias_insignificantes)]
+
+    return df
+
+# def remover_insignificantes_movements(df: pd.DataFrame, cnj_grouping: dict, limiar: int = 10) -> pd.DataFrame:
+#     """Remove movimentos insignificantes do DataFrame baseado na árvore CNJ e na frequência dos movimentos.
 
 #     Args:
 #     ----
 #         df (pd.DataFrame): DataFrame original.
+#         cnj_grouping (dict): Dicionário de agrupamento CNJ que mapeia movimentoID para categorias.
+#         limiar (int): Frequência mínima para um movimento ser considerado significativo.
 
 #     Returns:
 #     -------
 #         pd.DataFrame: DataFrame sem movimentos insignificantes.
-
 #     """
-#     movimentos_insignificantes = [
-#         'Publicação',
-#         'Decurso de Prazo',
-#         'Conclusão',
-#     ]
-#     return df[~df['activity'].isin(movimentos_insignificantes)]
+#     # Mapear os movimentoIDs para seus respectivos grupos usando o cnj_grouping
+#     df['grupo_movimento'] = df['movimentoID'].map(cnj_grouping).fillna('Outros')
 
-# TODO: Iniciando padronização de movimentos
+#     # Contar a frequência de cada grupo de movimento
+#     frequencia_grupos = df['grupo_movimento'].value_counts()
+
+#     # Identificar grupos insignificantes com base no limiar
+#     grupos_insignificantes = frequencia_grupos[frequencia_grupos < limiar].index.tolist()
+
+#     # Remover movimentos insignificantes baseados na frequência
+#     df = df[~df['grupo_movimento'].isin(grupos_insignificantes)]
+
+#     return df
+
 def get_cnj_grouping():
     """Constrói um dicionário de agrupamento CNJ com base na estrutura da Tabela de Padronização de Unidades (TPU).
 
@@ -115,30 +141,19 @@ def calcular_duração(df):
     """
     return (df['dataFinal'] - df['dataInicio']).dt.total_seconds()
 
-# TODO: analisar se é necessário filtrar outliers ou seu impacto no desafio
-# def filtro_outliers(df):
-#     """Filtra outliers na duração dos movimentos.
-
-#     Args:
-#     ----
-#         df (pd.DataFrame): DataFrame original.
-
-#     Returns:
-#     -------
-#         pd.DataFrame: DataFrame sem outliers na duração.
-
-#     """
-#     return df[
-#         (df['duration_calculated'] > 0) & (df['duration_calculated'] < 1e7)
-#     ]
-
-
 if __name__ == '__main__':
-    # Carregar o dataset original e realizar o pré-processamento
-    # Salvar o DataFrame pré-processado em um novo arquivo CSV
-    dataset_path = '/workspace/data/movimentos_unidade_1.csv'
-    df_preprocessed = load_and_preprocess_data(dataset_path)
-    print(df_preprocessed.head())
-    df_preprocessed.to_csv(
+    # Carregar o primeiro dataset e realizar o pré-processamento
+    dataset_path_1 = '/workspace/data/movimentos_unidade_1.csv'
+    df_preprocessed_1 = load_and_preprocess_data(dataset_path_1)
+    print(df_preprocessed_1.head())
+    df_preprocessed_1.to_csv(
         '/workspace/data/movimentos_unidade_1_pre_processado.csv', index=False,
+    )
+
+    # Carregar o segundo dataset e realizar o pré-processamento
+    dataset_path_2 = '/workspace/data/movimentos_unidade_2.csv'
+    df_preprocessed_2 = load_and_preprocess_data(dataset_path_2)
+    print(df_preprocessed_2.head())
+    df_preprocessed_2.to_csv(
+        '/workspace/data/movimentos_unidade_2_pre_processado.csv', index=False,
     )
