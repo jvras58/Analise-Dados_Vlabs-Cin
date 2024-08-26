@@ -5,29 +5,98 @@ import json
 import pandas as pd
 from src.data.make_dataset import get_cnj_grouping
 
-# FIXME: ERRO DE IMPORT RESOLVIDO: export PYTHONPATH=$PYTHONPATH:/workspace/src
 
-def especializar_movimentos(df, cnj_grouping):
-    """Especializa os movimentos processuais utilizando as colunas 'movimentoID', 'documento' e 'complemento'.
-    - Adiciona novas colunas para classificar ou agrupar os movimentos.
+def classificar_movement_detail(row, tpu_cnj):
+    """
+    Classifica o detalhe do movimento com base em identificadores, contexto, e fases do processo judicial.
 
     Args:
-    ----
-        df (pd.DataFrame): DataFrame pré-processado com os movimentos.
-        cnj_grouping (dict): Dicionário de agrupamento CNJ.
+        row (pd.Series): Linha do DataFrame com os dados de um movimento.
+        tpu_cnj (dict): Dicionário que mapeia os identificadores de movimento para categorias da TPU do CNJ.
 
     Returns:
-    -------
-        pd.DataFrame: DataFrame com novas features especializadas.
-
+        str: Detalhe especializado do movimento.
     """
-    df['movement_type'] = df['documento'].map(lambda x: classificar_por_documento(x))
-    df['movement_detail'] = df['complemento'].map(lambda x: classificar_por_complemento(x))
+    movimento_id = str(row['movimentoID'])
+    documento = row['documento'].lower() if isinstance(row['documento'], str) else 'N/A'
+    complemento = row['complemento'].lower() if isinstance(row['complemento'], str) else 'N/A'
+    
+    categoria = tpu_cnj.get(movimento_id, 'Outros')
+
+    if 'sentença' in documento:
+        detalhe = 'Sentença'
+    elif 'despacho' in documento:
+        detalhe = 'Despacho'
+    elif 'decisão' in documento:
+        detalhe = 'Decisão'
+    elif 'urgente' in complemento:
+        detalhe = 'Urgente'
+    elif 'prazo' in complemento:
+        detalhe = 'Com Prazo'
+    elif 'intimação' in complemento:
+        detalhe = 'Intimação'
+    elif 'distribuição' in row['activity'].lower():
+        detalhe = 'Distribuição'
+    elif 'audiência' in row['activity'].lower():
+        detalhe = 'Audiência'
+    elif 'expedição de documento' in row['activity'].lower():
+        detalhe = 'Expedição de Documento'
+    else:
+        detalhe = 'Padrão'
+    
+    if 'fase' in row:
+        if row['fase'] == 'inicial':
+            detalhe += ' - Fase Inicial'
+        elif row['fase'] == 'contestação':
+            detalhe += ' - Fase de Contestação'
+
+    return f"{categoria}: {detalhe}"
+
+def especializar_movimentos(df, tpu_cnj):
+    """
+    Especializa os movimentos processuais utilizando as colunas 'documento', 'complemento' e identificadores.
+
+    Args:
+        df (pd.DataFrame): DataFrame pré-processado com os movimentos.
+        tpu_cnj (dict): Dicionário que mapeia os identificadores de movimento para categorias da TPU do CNJ.
+
+    Returns:
+        pd.DataFrame: DataFrame com novas features especializadas.
+    """
+    df['movement_detail'] = df.apply(lambda row: classificar_movement_detail(row, tpu_cnj), axis=1)
     df['complexity'] = df['activity_group'].map(determinar_complexidade)
 
-    df['activity_group'] = df['movimentoID'].map(cnj_grouping).fillna('Outro Movimento')
+    return df
 
-    df['special_cnj_classification'] = df.apply(specialize_activity, axis=1)
+def determinar_complexidade(activity_group):
+    """
+    Determina a complexidade do movimento baseado no agrupamento de atividade.
+
+    Args:
+        activity_group (str): Grupo de atividades do movimento.
+
+    Returns:
+        str: Nível de complexidade (simples, médio, complexo).
+    """
+    if activity_group in ['Início do Processo', 'Notificação']:
+        return 'Simples'
+    elif activity_group in ['Audiência', 'Sentença', 'Decisão']:
+        return 'Médio'
+    return 'Complexo'
+
+def especializar_movimentos(df, tpu_cnj):
+    """
+    Especializa os movimentos processuais utilizando as colunas 'documento', 'complemento' e identificadores.
+
+    Args:
+        df (pd.DataFrame): DataFrame pré-processado com os movimentos.
+        tpu_cnj (dict): Dicionário que mapeia os identificadores de movimento para categorias da TPU do CNJ.
+
+    Returns:
+        pd.DataFrame: DataFrame com novas features especializadas.
+    """
+    df['movement_detail'] = df.apply(lambda row: classificar_movement_detail(row, tpu_cnj), axis=1)
+    df['complexity'] = df['activity_group'].map(determinar_complexidade)
 
     return df
 
