@@ -40,10 +40,13 @@ Essas e outras libs e tecnologias usadas neste projeto são:
 │      └─🐍 build_features.py -> [Cria as features necessárias para a modelagem com base no pre-processamento gerado pelo make_dataset]
 │
 │   └─📁 models              
-│      └─🐍 models.py -> [Implementa os modelos de mineração de processos]
+│      └─🐍 models.py -> [Implementa os modelos de mineração de processos usando o pm4py]
 │
 │   └─📁 visualization              
-│      └─🐍 visualize.py -> [Gera visualizações dos insights extraídos.] 
+│      └─🐍 visualize.py -> [Gera visualizações dos insights extraídos.]
+│      └─🐍 filters.py -> [Filtros do streamlit para o usuario.]
+│      └─🐍 graphs.py -> [Graficos com os insights.] 
+│      └─🐍 load_data.py -> [dados processados.] 
 │ 
 ├─📁 .vscode         ->  [Definições de ambiente para o VSCode]
 ├─📄 .gitignore

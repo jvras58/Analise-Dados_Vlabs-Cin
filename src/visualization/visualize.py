@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 
+# from src.models.model import discover_process_model, visualize_process_model
 from src.visualization.filters import apply_filters
 from src.visualization.graphs import plot_bar_chart, plot_boxplot, plot_histogram, plot_line_chart
 from src.visualization.load_Data import DATASET_OPTIONS, load_data
@@ -16,6 +17,18 @@ def main():
 
     st.write(f'## Visualização dos Dados - {dataset_selection}')
     st.dataframe(df.head())
+
+
+    # FIXME: processo incorreto precisaria de mais tempo para criar
+    # st.write("## Descoberta de Modelos de Processo")
+    # heu_net = discover_process_model(df)
+    # if heu_net is None:
+    #     return
+
+    # st.write("Modelo de Processo Descoberto:")
+    # process_model_svg = visualize_process_model(heu_net)
+    # if process_model_svg:
+    #     st.markdown(f'<div style="text-align:center">{process_model_svg}</div>', unsafe_allow_html=True)
 
     st.write("## Análise Estatística")
     plot_bar_chart(df, 'movement_detail')
