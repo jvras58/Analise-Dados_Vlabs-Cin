@@ -11,11 +11,32 @@ def especializar_movimentos(df):
     Returns:
         pd.DataFrame: DataFrame com novas features especializadas.
     """
+    df['atividade_especializada'] = df.apply(especializar_movimento_row, axis=1)
     df['movement_type'] = df['documento'].map(classificar_por_documento)
     df['movement_detail'] = df['complemento'].map(classificar_por_complemento)
     df['complexity'] = df['activity_group'].map(determinar_complexidade)
 
     return df
+
+def especializar_movimento_row(row):
+    """
+    Especializa o movimento processual com base na lógica definida.
+    
+    Args:
+        row (pd.Series): Linha do DataFrame com os dados de um movimento.
+
+    Returns:
+        str: Descrição especializada do movimento.
+    """
+    complemento = row['complemento'] if isinstance(row['complemento'], str) else 'N/A'
+    documento = row['documento'] if isinstance(row['documento'], str) else 'N/A'
+
+    if row['movimentoID'] == 85:
+        return "Petição - " + complemento if complemento != 'N/A' else "Petição"
+    elif row['movimentoID'] == 60:
+        return "Expedição de Documento - " + documento if documento != 'N/A' else "Expedição de Documento"
+    else:
+        return row['activity']  # add outra lógica de especialização
 
 def classificar_por_documento(documento):
     """
@@ -85,7 +106,6 @@ if __name__ == '__main__':
     # Carregar o segundo dataset pré-processado
     dataset_path_2 = '/workspace/data/movimentos_unidade_2_pre_processado.csv'
     df_2 = pd.read_csv(dataset_path_2)
-    
     
     # Especializar os movimentos usando o DataFrame
     df_specialized_1 = especializar_movimentos(df_1)

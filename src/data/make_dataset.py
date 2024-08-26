@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 
 def load_and_preprocess_data(file_path):
@@ -25,7 +26,7 @@ def load_and_preprocess_data(file_path):
 
     df = remover_insignificantes_movements(df)
 
-    df['activity_group'] = df['activity'].map(get_cnj_grouping()).fillna(df['activity'])
+    df['activity_group'] = df['movimentoID'].apply(lambda x: agrupar_movimentos(x))
 
     df['duration_calculated'] = calcular_duração(df)
 
@@ -34,6 +35,28 @@ def load_and_preprocess_data(file_path):
     df.drop_duplicates(subset=['processoID', 'activity'], inplace=True)
 
     return df
+
+def agrupar_movimentos(movimento_id):
+    """
+    Agrupa os movimentos com base na árvore do CNJ.
+    """
+    with open('/workspace/data/cnj-movimentos-tree.json', 'r') as f:
+        cnj_tree = json.load(f)
+
+    movimento_id = str(movimento_id)
+
+    def buscar_grupo(node, movimento_id, path=[]):
+        if movimento_id in node:
+            return path + [movimento_id]
+        
+        for key, sub_node in node.items():
+            result = buscar_grupo(sub_node, movimento_id, path + [key])
+            if result:
+                return result
+        return None
+
+    grupo = buscar_grupo(cnj_tree, movimento_id)
+    return " > ".join(grupo) if grupo else 'Outros'
 
 def remover_insignificantes_movements(df):
     """
