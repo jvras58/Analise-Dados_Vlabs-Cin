@@ -1,9 +1,13 @@
+"""Módulo para carregar e pré-processar o dataset de movimentos processuais."""
+
 import json
+
 import pandas as pd
 
-def load_and_preprocess_data(file_path):
-    """
-    Carrega o dataset e realiza o pré-processamento inicial:
+
+def load_and_preprocess_data(file_path: pd) -> pd.DataFrame:
+    """Carrega o dataset e realiza o pré-processamento inicial.
+
     - Converte as colunas de datas para o formato datetime.
     - Trata valores nulos em 'complemento' e 'documento'.
     - Remove movimentos insignificantes.
@@ -11,105 +15,131 @@ def load_and_preprocess_data(file_path):
     - Calcula duração dos movimentos quando possível.
 
     Args:
+    ----
         file_path (str): Caminho para o arquivo CSV.
 
     Returns:
+    -------
         pd.DataFrame: DataFrame pré-processado.
+
     """
-    df = pd.read_csv(file_path)
+    dados = pd.read_csv(file_path)
 
-    df['dataInicio'] = pd.to_datetime(df['dataInicio'], errors='coerce')
-    df['dataFinal'] = pd.to_datetime(df['dataFinal'], errors='coerce')
+    dados['dataInicio'] = pd.to_datetime(dados['dataInicio'], errors='coerce')
+    dados['dataFinal'] = pd.to_datetime(dados['dataFinal'], errors='coerce')
 
-    df['complemento'] = df['complemento'].fillna('N/A')
-    df['documento'] = df['documento'].fillna('N/A')
+    dados['complemento'] = dados['complemento'].fillna('N/A')
+    dados['documento'] = dados['documento'].fillna('N/A')
 
-    df = remover_insignificantes_movements(df)
+    cnj_grouping = get_cnj_grouping()
 
-    df['activity_group'] = df['movimentoID'].apply(lambda x: agrupar_movimentos(x))
+    dados = remover_insignificantes_movements(dados, cnj_grouping)
 
-    df['duration_calculated'] = calcular_duração(df)
+    dados['activity_group'] = (
+        dados['activity'].map(get_cnj_grouping()).fillna(dados['activity'])
+    )
 
-    df = filtro_outliers(df)
+    dados['duration_calculated'] = calcular_duração(dados)
 
-    df.drop_duplicates(subset=['processoID', 'activity'], inplace=True)
+    return dados.drop_duplicates(subset=['processoID', 'activity'])
+
+
+def remover_insignificantes_movements(df: pd.DataFrame, cnj_grouping: dict) -> pd.DataFrame:
+    """Remove movimentos insignificantes do DataFrame baseado na árvore CNJ.
+
+    Args:
+    ----
+        df (pd.DataFrame): DataFrame original.
+        cnj_grouping (dict): Dicionário de agrupamento CNJ que mapeia movimentoID para categorias.
+
+    Returns:
+    -------
+        pd.DataFrame: DataFrame sem movimentos insignificantes.
+    """
+    # Categorias de movimentos considerados insignificantes na árvore CNJ e de acordo com a documentação do desafio técnico
+    categorias_insignificantes = ['publicação', 'decurso de prazo', 'conclusão', 'mero expediente']
+
+    df['grupo_movimento'] = df['movimentoID'].map(cnj_grouping).fillna('Outros')
+
+    df = df[~df['grupo_movimento'].str.lower().isin(categorias_insignificantes)]
 
     return df
 
-def agrupar_movimentos(movimento_id):
-    """
-    Agrupa os movimentos com base na árvore do CNJ.
-    """
-    with open('/workspace/data/cnj-movimentos-tree.json', 'r') as f:
-        cnj_tree = json.load(f)
+# def remover_insignificantes_movements(df: pd.DataFrame, cnj_grouping: dict, limiar: int = 10) -> pd.DataFrame:
+#     """Remove movimentos insignificantes do DataFrame baseado na árvore CNJ e na frequência dos movimentos.
 
-    movimento_id = str(movimento_id)
+#     Args:
+#     ----
+#         df (pd.DataFrame): DataFrame original.
+#         cnj_grouping (dict): Dicionário de agrupamento CNJ que mapeia movimentoID para categorias.
+#         limiar (int): Frequência mínima para um movimento ser considerado significativo.
 
-    def buscar_grupo(node, movimento_id, path=[]):
-        if movimento_id in node:
-            return path + [movimento_id]
-        
-        for key, sub_node in node.items():
-            result = buscar_grupo(sub_node, movimento_id, path + [key])
-            if result:
-                return result
-        return None
+#     Returns:
+#     -------
+#         pd.DataFrame: DataFrame sem movimentos insignificantes.
+#     """
+#     # Mapear os movimentoIDs para seus respectivos grupos usando o cnj_grouping
+#     df['grupo_movimento'] = df['movimentoID'].map(cnj_grouping).fillna('Outros')
 
-    grupo = buscar_grupo(cnj_tree, movimento_id)
-    return " > ".join(grupo) if grupo else 'Outros'
+#     # Contar a frequência de cada grupo de movimento
+#     frequencia_grupos = df['grupo_movimento'].value_counts()
 
-def remover_insignificantes_movements(df):
-    """
-    Remove movimentos insignificantes do DataFrame.
-    
-    Args:
-        df (pd.DataFrame): DataFrame original.
+#     # Identificar grupos insignificantes com base no limiar
+#     grupos_insignificantes = frequencia_grupos[frequencia_grupos < limiar].index.tolist()
 
-    Returns:
-        pd.DataFrame: DataFrame sem movimentos insignificantes.
-    """
-    movimentos_insignificantes = [
-        'Publicação', 'Decurso de Prazo', 'Conclusão',
-        # add outros movimentos irrelevantes
-    ]
-    return df[~df['activity'].isin(movimentos_insignificantes)]
+#     # Remover movimentos insignificantes baseados na frequência
+#     df = df[~df['grupo_movimento'].isin(grupos_insignificantes)]
+
+#     return df
 
 def get_cnj_grouping():
+    """Constrói um dicionário de agrupamento CNJ com base na estrutura da Tabela de Padronização de Unidades (TPU).
+
+    Returns
+    -------
+        dict: Dicionário onde as chaves são identificadores de movimentos e os valores são categorias ou grupos.
+
     """
-    Retorna o dicionário de agrupamento CNJ.
-    
-    Returns:
-        dict: Dicionário de agrupamento CNJ.
-    """
-    return {
-        'Distribuição': 'Início do Processo',
-        'Citação': 'Notificação',
-        'Audiência de Instrução': 'Audiência',
-    }
+    with open('/workspace/data/cnj-movimentos-tree.json') as file:
+        cnj_tree = json.load(file)
+
+    cnj_grouping = {}
+
+    def preencher_grupo(node, current_group=None):
+        """Função recursiva para preencher o dicionário de agrupamento a partir da estrutura hierárquica da TPU.
+
+        Args:
+        ----
+            node (dict): O nó atual da árvore TPU.
+            current_group (str): O grupo atual ao qual o nó pertence.
+
+        """
+        for key, sub_node in node.items():
+            if not sub_node:
+                cnj_grouping[int(key)] = (
+                    current_group if current_group else 'Outro Movimento'
+                )
+            else:
+                preencher_grupo(sub_node, current_group or key)
+
+    preencher_grupo(cnj_tree)
+
+    return cnj_grouping
+
 
 def calcular_duração(df):
-    """
-    Calcula a duração dos movimentos em segundos.
-    
+    """Calcula a duração dos movimentos em segundos.
+
     Args:
+    ----
         df (pd.DataFrame): DataFrame original.
 
     Returns:
+    -------
         pd.Series: Série com a duração calculada dos movimentos.
+
     """
     return (df['dataFinal'] - df['dataInicio']).dt.total_seconds()
-
-def filtro_outliers(df):
-    """
-    Filtra outliers na duração dos movimentos.
-    
-    Args:
-        df (pd.DataFrame): DataFrame original.
-
-    Returns:
-        pd.DataFrame: DataFrame sem outliers na duração.
-    """
-    return df[(df['duration_calculated'] > 0) & (df['duration_calculated'] < 1e7)]
 
 if __name__ == '__main__':
     # Carregar o primeiro dataset e realizar o pré-processamento
