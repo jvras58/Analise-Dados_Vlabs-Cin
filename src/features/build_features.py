@@ -19,24 +19,29 @@ def especializar_movimentos(df):
     return df
 
 def especializar_movimento_row(row):
-    """
-    Especializa o movimento processual com base na lógica definida.
-    
+    """Especializa uma atividade específica com base em seu identificador `movimentoID`.
+
     Args:
-        row (pd.Series): Linha do DataFrame com os dados de um movimento.
+    ----
+        row (pd.Series): Linha do DataFrame contendo as informações do movimento.
 
     Returns:
-        str: Descrição especializada do movimento.
-    """
-    complemento = row['complemento'] if isinstance(row['complemento'], str) else 'N/A'
-    documento = row['documento'] if isinstance(row['documento'], str) else 'N/A'
+    -------
+        str: Classificação especializada do movimento.
 
-    if row['movimentoID'] == 85:
-        return "Petição - " + complemento if complemento != 'N/A' else "Petição"
-    elif row['movimentoID'] == 60:
-        return "Expedição de Documento - " + documento if documento != 'N/A' else "Expedição de Documento"
-    else:
-        return row['activity']  # add outra lógica de especialização
+    """
+    identificadores_especializados = {
+        85: "Petição Inicial",
+        12271: "Petição Contestação",
+        60: "Expedição de Documento",
+        11010: "Mero Expediente",
+        106: "Mandado Judicial",
+        985: "Mandado de Citação",
+        970: "Audiência",
+    }
+    if row['movimentoID'] in identificadores_especializados:
+        return identificadores_especializados[row['movimentoID']]
+    return "Outros Movimentos"
 
 def classificar_por_documento(documento):
     """
