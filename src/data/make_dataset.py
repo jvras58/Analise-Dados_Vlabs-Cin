@@ -88,10 +88,19 @@ def filtro_outliers(df):
     """
     return df[(df['duration_calculated'] > 0) & (df['duration_calculated'] < 1e7)]
 
-if __name__ == "__main__":
-    # Carregar o dataset original e realizar o pré-processamento
-    # Salvar o DataFrame pré-processado em um novo arquivo CSV
-    dataset_path = '/workspace/data/movimentos_unidade_1.csv'
-    df_preprocessed = load_and_preprocess_data(dataset_path)
-    print(df_preprocessed.head())
-    df_preprocessed.to_csv('/workspace/data/movimentos_unidade_1_pre_processado.csv', index=False)
+if __name__ == '__main__':
+    # Carregar o primeiro dataset e realizar o pré-processamento
+    dataset_path_1 = '/workspace/data/movimentos_unidade_1.csv'
+    df_preprocessed_1 = load_and_preprocess_data(dataset_path_1)
+    print(df_preprocessed_1.head())
+    df_preprocessed_1.to_csv(
+        '/workspace/data/movimentos_unidade_1_pre_processado.csv', index=False,
+    )
+
+    # Carregar o segundo dataset e realizar o pré-processamento
+    dataset_path_2 = '/workspace/data/movimentos_unidade_2.csv'
+    df_preprocessed_2 = load_and_preprocess_data(dataset_path_2)
+    print(df_preprocessed_2.head())
+    df_preprocessed_2.to_csv(
+        '/workspace/data/movimentos_unidade_2_pre_processado.csv', index=False,
+    )

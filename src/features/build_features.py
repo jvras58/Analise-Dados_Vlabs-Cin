@@ -77,11 +77,26 @@ def determinar_complexidade(activity_group):
         return 'Médio'
     return 'Complexo'
 
-if __name__ == "__main__":
-    # Carregar o dataset pré-processado
-    # Salvar o DataFrame processado em um novo arquivo CSV
-    dataset_path = '/workspace/data/movimentos_unidade_1_pre_processado.csv'
-    df = pd.read_csv(dataset_path)
-    df_specialized = especializar_movimentos(df)
-    print(df_specialized.head())
-    df_specialized.to_csv('/workspace/data/movimentos_unidade_1_processado.csv', index=False)
+if __name__ == '__main__':
+    # Carregar o primeiro dataset pré-processado
+    dataset_path_1 = '/workspace/data/movimentos_unidade_1_pre_processado.csv'
+    df_1 = pd.read_csv(dataset_path_1)
+    
+    # Carregar o segundo dataset pré-processado
+    dataset_path_2 = '/workspace/data/movimentos_unidade_2_pre_processado.csv'
+    df_2 = pd.read_csv(dataset_path_2)
+    
+    
+    # Especializar os movimentos usando o DataFrame
+    df_specialized_1 = especializar_movimentos(df_1)
+    print(df_specialized_1.head())
+    df_specialized_1.to_csv(
+        '/workspace/data/movimentos_unidade_1_processado.csv', index=False,
+    )
+    
+    # Especializar os movimentos usando o DataFrame
+    df_specialized_2 = especializar_movimentos(df_2)
+    print(df_specialized_2.head())
+    df_specialized_2.to_csv(
+        '/workspace/data/movimentos_unidade_2_processado.csv', index=False,
+    )
