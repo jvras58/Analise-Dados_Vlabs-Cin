@@ -24,4 +24,4 @@ run:
 	export PYTHONPATH=$$PYTHONPATH:/workspace/src && poetry run python src/features/build_features.py
 
 start:
-	@poetry run streamlit run src/visualization/visualize.py
+	export PYTHONPATH=$$PYTHONPATH:/workspace/src && poetry run streamlit run src/visualization/visualize.py
